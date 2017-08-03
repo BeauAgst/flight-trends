@@ -16,6 +16,7 @@
   },
   "homepage": "https://github.com/BeauAgst/flight-trends#readme",
   "dependencies": {
+    "firebase-admin": "^5.1.0",
     "request": "^2.81.0"
   }
 }

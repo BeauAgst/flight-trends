@@ -7,18 +7,20 @@ const apiKey			= 'AIzaSyBkpiCUiDDcBNSSQ99HxoIW3CwgLr7-E3k',
 var flights = {};
 
 flights.init = function() {
+	return new Promise(function(resolve, reject) {
 
-	for (f in monitoredFlights) {
-		let getFlights = flights.get(monitoredFlights[f]);
+		for (f in monitoredFlights) {
+			let getFlights = flights.get(monitoredFlights[f]);
 
-		getFlights.then(function(data) {
-			let sortFlights = flights.sort(monitoredFlights[f], data);
+			getFlights.then(function(data) {
+				let sortFlights = flights.sort(monitoredFlights[f], data);
 
-			sortFlights.then(function(data) {
-				flights.normalize(data);
-			})
-		});
-	} 
+				sortFlights.then(function(data) {
+					resolve(flights.normalize(data)); 
+				})
+			});
+		}
+	})
 }
 
 flights.get = function() {
@@ -76,7 +78,7 @@ flights.normalize = function(data) {
 		}
 	}
 	data.flights = flightsArray;
-	console.log(data);
+	return data;
 }
 
-flights.init();
+module.exports = flights;
