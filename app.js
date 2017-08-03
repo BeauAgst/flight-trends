@@ -1,53 +1,82 @@
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-var sassMiddleware = require('node-sass-middleware');
+const apiKey			= 'AIzaSyBkpiCUiDDcBNSSQ99HxoIW3CwgLr7-E3k',
+	  request			= require('request'),
+	  fs				= require('fs'),
+	  monitoredFlights	= require('./flights');
+	  airlineCodes		= require('./airlines');
 
-var index = require('./routes/index');
-var users = require('./routes/users');
+var flights = {};
 
-var app = express();
+flights.init = function() {
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'hbs');
+	for (f in monitoredFlights) {
+		let getFlights = flights.get(monitoredFlights[f]);
 
-// uncomment after placing your favicon in /public
-//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(sassMiddleware({
-  src: path.join(__dirname, 'public'),
-  dest: path.join(__dirname, 'public'),
-  indentedSyntax: true, // true = .sass and false = .scss
-  sourceMap: true
-}));
-app.use(express.static(path.join(__dirname, 'public')));
+		getFlights.then(function(data) {
+			let sortFlights = flights.sort(monitoredFlights[f], data);
 
-app.use('/', index);
-app.use('/users', users);
+			sortFlights.then(function(data) {
+				flights.normalize(data);
+			})
+		});
+	} 
+}
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
+flights.get = function() {
+	return new Promise(function(resolve, reject) {		
+		request({
+			url: 'https://www.googleapis.com/qpxExpress/v1/trips/search?key=' + apiKey,
+			method: 'POST',
+			json: monitoredFlights[0].data
+		}, function (error, response, body) {
+			if (!error && response.statusCode === 200) resolve(body.trips.tripOption);
+		});
+	})
+}
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+flights.sort = function(flightDetails, data) {
+	let isodate = new Date().toISOString(),
+		flightList = {
+		id: flightDetails.id,
+		name: flightDetails.name,
+		date: isodate,
+		flights: {}
+	};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
+	return new Promise(function(resolve, reject) {
+		for (let i = 0; i < data.length; i++) {
+			let airline = data[i].slice[0].segment[0].flight.carrier,
+				flightFee = data[i].saleTotal.replace(/[^0-9.]/g, ""),
+				flight = flightList.flights[airline];
 
-module.exports = app;
+			if (!flight) {
+				flightList.flights[airline] = flightFee;
+				continue;
+			}
+
+			if (parseInt(flightList.flights[airline]) < parseInt(flightFee)) continue;
+			flightList.flights[airline] = flightFee;
+		}
+		resolve(flightList);
+	});
+}
+
+flights.normalize = function(data) {
+	let airlines = data.flights,
+		flightsArray = [];
+
+	for (airline in airlines) {
+
+		for (let i = 0; i < airlineCodes.length; i++) {
+			if (airline != airlineCodes[i].iata) continue;
+			let name = airlineCodes[i].name,
+				iata = airlineCodes[i].iata,
+				price =  data.flights[airline];
+			
+			flightsArray.push({name, iata, price})
+		}
+	}
+	data.flights = flightsArray;
+	console.log(data);
+}
+
+flights.init();
