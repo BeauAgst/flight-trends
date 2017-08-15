@@ -1,6 +1,7 @@
 module.exports = [
 	{
 		'origin': 'LHR',
+		'name': 'London to Melbourne',
 		'originLong': 'London Heathrow',
 		'dest': 'MEL',
 		'destLong': 'Melbourne, Australia',

@@ -8,15 +8,17 @@ const apiKey			= 'AIzaSyBkpiCUiDDcBNSSQ99HxoIW3CwgLr7-E3k',
 var flights = {};
 
 flights.init = function() {
-	let requestData = [];
+	let x = require('./data.json');
 	for (f in monitoredFlights) {
-		flights.set(f, monitoredFlights[f])
-			.then(function(data){
-				console.log(data)
-				requestData.push(data);
+	// 	flights.set(f, monitoredFlights[f])
+	// 		.then(function(data){
+				
+	// 		})
+		flights.sort(f, monitoredFlights, x)
+			.then(function(result){
+				console.log(result);
 			})
 	}
-	fs.writeFile('./data.json', JSON.stringify(requestData, null, '\t'), 'utf8');
 }
 
 flights.set = function(index, data) {
@@ -68,30 +70,32 @@ flights.set = function(index, data) {
 	})
 }
 
-flights.sort = function(flightDetails, data) {
-	let isodate = new Date().toISOString(),
-		flightList = {
-		id: flightDetails.id,
-		name: flightDetails.name,
-		date: isodate,
-		flights: {}
-	};
+flights.sort = function(index, flightDetails, data) {
+	let currentDate = moment().format('YYYY-MM-DD'),
+		journeyData = {
+			id: index,
+			name: flightDetails[index].name,
+			origin: flightDetails[index].origin,
+			dest: flightDetails[index].dest,
+			journey: []
+		};
 
 	return new Promise(function(resolve, reject) {
 		for (let i = 0; i < data.length; i++) {
 			let airline = data[i].slice[0].segment[0].flight.carrier,
 				flightFee = data[i].saleTotal.replace(/[^0-9.]/g, ""),
-				flight = flightList.flights[airline];
+				flight = journeyData.journey[airline];
 
 			if (!flight) {
-				flightList.flights[airline] = flightFee;
+				journeyData.journey[airline] = flightFee;
 				continue;
 			}
 
-			if (parseInt(flightList.flights[airline]) < parseInt(flightFee)) continue;
-			flightList.flights[airline] = flightFee;
+			if (parseInt(journeyData.journey[airline]) < parseInt(flightFee)) continue;
+			journeyData.journey[airline] = flightFee;
 		}
-		resolve(flightList);
+		fs.writeFile('./test-formatted.json', JSON.stringify(journeyData, null, '\t'), 'utf8');
+		resolve(journeyData);
 	});
 }
 
