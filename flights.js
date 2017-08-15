@@ -3,7 +3,16 @@ module.exports = [
 		'origin': 'LHR',
 		'originLong': 'London Heathrow',
 		'dest': 'MEL',
-		'destLong': 'Melbourne',
-		'maxStops': 1
+		'destLong': 'Melbourne, Australia',
+		'maxStops': 1,
+		'startDate': '2018-05-07'
 	}
+	// {
+	// 	'origin': 'LGW',
+	// 	'originLong': 'London Gatwick',
+	// 	'dest': 'SVG',
+	// 	'destLong': 'Stavanger, Norway',
+	// 	'maxStops': 1,
+	// 	'startDate': '2018-06-11'
+	// }	
 ]

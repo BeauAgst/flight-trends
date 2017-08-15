@@ -2,35 +2,24 @@ const apiKey			= 'AIzaSyBkpiCUiDDcBNSSQ99HxoIW3CwgLr7-E3k',
 	  request			= require('request'),
 	  fs				= require('fs'),
 	  monitoredFlights	= require('./flights'),
-	  moment			= require('moment');
+	  moment			= require('moment'),
+	  https				= require('https');
 
 var flights = {};
 
 flights.init = function() {
-	return new Promise(function(resolve, reject) {
-
-		for (f in monitoredFlights) {
-			let getFlights = flights.get(f, monitoredFlights[f]);
-
-			getFlights.then(function(data) {
-				console.log(data);
-				fs.writeFile('./data.json', JSON.stringify(data, null, '\t'), 'utf8');
-				// let sortFlights = flights.sort(monitoredFlights[f], data);
-
-				// sortFlights.then(function(data) {
-				// 	console.log(data);
-					// resolve(data); 
-				// })
-			});
-		}
-	})
+	let requestData = [];
+	for (f in monitoredFlights) {
+		 requestData.push(flights.set(f, monitoredFlights[f]));
+	}
+	fs.writeFile('./data.json', JSON.stringify(requestData, null, '\t'), 'utf8');
 }
 
-flights.get = function(index, data) {
-	let startDate = '2018-05-07';
-	let body = {
-		'id': index,
-		'data': {
+flights.set = function(index, data) {
+	let requestData = [];
+
+	for (let j = 0; j < 1; j++) {
+		let body = {
 			'request': {
 				'passengers': {
 					'kind': 'qpxexpress#passengerCounts',
@@ -41,42 +30,34 @@ flights.get = function(index, data) {
 						'kind': 'qpxexpress#sliceInput',
 						'origin': data.origin,
 						'destination': data.dest,
-						'date': '2018-05-07',
+						'date': moment(data.startDate).add(j, 'd').format('YYYY-MM-DD'),
 						'maxStops': data.maxStops
 					},
 					{
 						'kind': 'qpxexpress#sliceInput',
 						'origin': data.dest,
 						'destination': data.origin,
-						'date': '2018-05-13',
+						'date': moment(data.startDate).add(j+6, 'd').format('YYYY-MM-DD'),
 						'maxStops': data.maxStops
 					}
-				]
-			}
-		}	
-	};
-	let response = [];
-
-	return new Promise(function(resolve, reject) {
-
-		for (let j = 0; j < 1; j++) {
-			let outbound = moment(startDate).add(j, 'd').format('YYYY-MM-DD'),
-				inbound = moment(startDate).add(j+6, 'd').format('YYYY-MM-DD');
-			body.data.request.slice[0].date = outbound;
-			body.data.request.slice[1].date = inbound;
-			response.push(flights.makeRequest(body.data));
-		}
-		resolve(response);
-	})
+				],
+				'solutions': 30
+			}	
+		},
+		response = flights.makeRequest(body);
+	}
+	return requestData;
 }
 
 flights.makeRequest = function(data) {
 	request({
 		url: 'https://www.googleapis.com/qpxExpress/v1/trips/search?key=' + apiKey,
 		method: 'POST',
-		json: data
+		json: data.data
 	}, function (error, response, body) {
-		if (!error && response.statusCode === 200) return body.trips.tripOption;
+		if (!error && response.statusCode === 200) {
+			return body.trips.tripOption;
+		}
 	});
 }
 
