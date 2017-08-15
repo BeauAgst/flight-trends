@@ -10,55 +10,62 @@ var flights = {};
 flights.init = function() {
 	let requestData = [];
 	for (f in monitoredFlights) {
-		 requestData.push(flights.set(f, monitoredFlights[f]));
+		flights.set(f, monitoredFlights[f])
+			.then(function(data){
+				console.log(data)
+				requestData.push(data);
+			})
 	}
 	fs.writeFile('./data.json', JSON.stringify(requestData, null, '\t'), 'utf8');
 }
 
 flights.set = function(index, data) {
-	let requestData = [];
+	let promises = [];
 
-	for (let j = 0; j < 1; j++) {
-		let body = {
-			'request': {
-				'passengers': {
-					'kind': 'qpxexpress#passengerCounts',
-					'adultCount': 1
-				},
-				'slice': [
-					{
-						'kind': 'qpxexpress#sliceInput',
-						'origin': data.origin,
-						'destination': data.dest,
-						'date': moment(data.startDate).add(j, 'd').format('YYYY-MM-DD'),
-						'maxStops': data.maxStops
+	return new Promise(function(resolve, reject) {
+
+		for (let j = 0; j < 1; j++) {
+			let body = {
+				'request': {
+					'passengers': {
+						'kind': 'qpxexpress#passengerCounts',
+						'adultCount': 1
 					},
-					{
-						'kind': 'qpxexpress#sliceInput',
-						'origin': data.dest,
-						'destination': data.origin,
-						'date': moment(data.startDate).add(j+6, 'd').format('YYYY-MM-DD'),
-						'maxStops': data.maxStops
-					}
-				],
-				'solutions': 30
-			}	
-		},
-		response = flights.makeRequest(body);
-	}
-	return requestData;
-}
+					'slice': [
+						{
+							'kind': 'qpxexpress#sliceInput',
+							'origin': data.origin,
+							'destination': data.dest,
+							'date': moment(data.startDate).add(j, 'd').format('YYYY-MM-DD'),
+							'maxStops': data.maxStops
+						},
+						{
+							'kind': 'qpxexpress#sliceInput',
+							'origin': data.dest,
+							'destination': data.origin,
+							'date': moment(data.startDate).add(j+6, 'd').format('YYYY-MM-DD'),
+							'maxStops': data.maxStops
+						}
+					],
+					'solutions': 30
+				}	
+			};
 
-flights.makeRequest = function(data) {
-	request({
-		url: 'https://www.googleapis.com/qpxExpress/v1/trips/search?key=' + apiKey,
-		method: 'POST',
-		json: data.data
-	}, function (error, response, body) {
-		if (!error && response.statusCode === 200) {
-			return body.trips.tripOption;
+			promises.push(new Promise(function(resolve, reject) {	
+				request({
+					url: 'https://www.googleapis.com/qpxExpress/v1/trips/search?key=' + apiKey,
+					method: 'POST',
+					json: body
+				}, function (error, response, body) {
+					if (!error && response.statusCode === 200) resolve(body.trips.tripOption);
+				});
+			}));
 		}
-	});
+
+		Promise.all(promises).then(function(allData) {
+			resolve(allData);
+		});
+	})
 }
 
 flights.sort = function(flightDetails, data) {
