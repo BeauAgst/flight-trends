@@ -8,17 +8,30 @@ const apiKey			= 'AIzaSyBkpiCUiDDcBNSSQ99HxoIW3CwgLr7-E3k',
 var flights = {};
 
 flights.init = function() {
-	let x = require('./data.json');
-	for (f in monitoredFlights) {
-	// 	flights.set(f, monitoredFlights[f])
-	// 		.then(function(data){
-				
-	// 		})
-		flights.sort(f, monitoredFlights, x)
-			.then(function(result){
-				console.log(result);
-			})
-	}
+	let promises = [];
+
+		return new Promise(function(resolve, reject) {
+
+			for (f in monitoredFlights) {
+
+				promises.push(new Promise(function(resolve, reject) {
+		// 		flights.set(f, monitoredFlights[f])
+		// 			.then(function(data){
+						let data = require('./raw.json');
+						flights.sort(f, monitoredFlights, data)
+							.then(function(result){
+								resolve(result);
+							})
+				// 	})
+				}));
+			}
+
+			Promise.all(promises).then(function(data) {
+				fs.writeFile('./output.json', JSON.stringify(data, null, '\t'), 'utf8');
+				resolve(data);
+			});
+		});
+
 }
 
 flights.set = function(index, data) {
@@ -26,7 +39,7 @@ flights.set = function(index, data) {
 
 	return new Promise(function(resolve, reject) {
 
-		for (let j = 0; j < 1; j++) {
+		for (let j = 0; j < 2; j++) {
 			let body = {
 				'request': {
 					'passengers': {
@@ -62,7 +75,7 @@ flights.set = function(index, data) {
 					if (!error && response.statusCode === 200) resolve(body.trips.tripOption);
 				});
 			}));
-		}
+		};
 
 		Promise.all(promises).then(function(allData) {
 			resolve(allData);
@@ -77,28 +90,50 @@ flights.sort = function(index, flightDetails, data) {
 			name: flightDetails[index].name,
 			origin: flightDetails[index].origin,
 			dest: flightDetails[index].dest,
-			journey: []
+			journey: [
+				{
+					data: [
+						{
+							recorded: currentDate,
+							carriers: [
+							]
+						}
+					]
+				}
+			]
 		};
 
 	return new Promise(function(resolve, reject) {
-		for (let i = 0; i < data.length; i++) {
-			let airline = data[i].slice[0].segment[0].flight.carrier,
-				flightFee = data[i].saleTotal.replace(/[^0-9.]/g, ""),
-				flight = journeyData.journey[airline];
 
-			if (!flight) {
-				journeyData.journey[airline] = flightFee;
-				continue;
-			}
+		for (let i = 0; i < data[index].length; i++) {
+			let airline = data[index][i].slice[0].segment[0].flight.carrier,
+				date = data[index][i].slice[0].segment[0].leg[0].departureTime,
+				flightFee = data[index][i].saleTotal.replace(/[^0-9.]/g, ""),
+				entry = {
+					name: airline,
+					price: flightFee
+				},
+				match = flights.search(entry, journeyData.journey[0].data[0].carriers);
 
-			if (parseInt(journeyData.journey[airline]) < parseInt(flightFee)) continue;
-			journeyData.journey[airline] = flightFee;
+			if (match) continue;
+			if (!("date" in journeyData.journey[0])) journeyData.journey[0].date = date;
+			journeyData.journey[0].data[0].carriers.push(entry);
 		}
-		fs.writeFile('./test-formatted.json', JSON.stringify(journeyData, null, '\t'), 'utf8');
 		resolve(journeyData);
 	});
 }
 
+flights.search = function(entry, array) {
+	let match = false;
+
+	for (let i = 0; i < array.length; i++) {
+		if (entry.name !== array[i].name && i == array.length -1) return match;
+		if (entry.name !== array[i].name) continue;
+		if (entry.price >= array[i].price) match = true;
+	}
+	return match;
+}
+
 module.exports = flights;
 
-flights.init();
+flights.init()

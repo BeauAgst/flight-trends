@@ -10,7 +10,8 @@ var firebase = admin.initializeApp({
 var db = admin.database();
 var ref = db.ref("data");
 
-flights.init().then(function(data) {
-	ref.push(data);
-	firebase.delete();
-})
+flights.init()
+	.then(function(data) {
+		ref.push(data);
+		firebase.delete();
+	});

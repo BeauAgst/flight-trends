@@ -1,0 +1,44 @@
+[
+	{
+		"id": "0",
+		"name": "London to Melbourne",
+		"origin": "LHR",
+		"dest": "MEL",
+		"journey": [
+			{
+				"data": [
+					{
+						"recorded": "2017-08-20",
+						"carriers": [
+							{
+								"name": "SQ",
+								"price": "691.87"
+							},
+							{
+								"name": "EK",
+								"price": "700.07"
+							},
+							{
+								"name": "QR",
+								"price": "702.87"
+							},
+							{
+								"name": "CX",
+								"price": "705.37"
+							},
+							{
+								"name": "QF",
+								"price": "714.07"
+							},
+							{
+								"name": "VA",
+								"price": "741.37"
+							}
+						]
+					}
+				],
+				"date": "2018-05-07T09:25+01:00"
+			}
+		]
+	}
+]
