@@ -1,17 +1,17 @@
-var admin = require("firebase-admin");
-var serviceAccount = require("./serviceAccountKey.json");
-var flights = require('./api');
+const admin = require('firebase-admin');
+const serviceAccount = require('./serviceAccountKey.json');
+const flights = require('./api');
 
-var firebase = admin.initializeApp({
-	credential: admin.credential.cert(serviceAccount),
-	databaseURL: "https://flight-trends.firebaseio.com"
+const firebase = admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: 'https://flight-trends.firebaseio.com',
 });
 
-var db = admin.database();
-var ref = db.ref("data");
+const db = admin.database();
+const ref = db.ref('data');
 
 flights.init()
-	.then(function(data) {
-		ref.push(data);
-		firebase.delete();
-	});
+    .then((data) => {
+        ref.push(data);
+        firebase.delete();
+    });

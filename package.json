@@ -16,8 +16,16 @@
   },
   "homepage": "https://github.com/BeauAgst/flight-trends#readme",
   "dependencies": {
+    "babel-core": "^6.26.0",    
     "firebase-admin": "^5.1.0",
     "moment": "^2.18.1",
     "request": "^2.81.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.0",
+    "eslint": "^4.7.2",
+    "eslint-config-airbnb-base": "^12.0.1",
+    "eslint-plugin-import": "^2.7.0"
   }
 }
